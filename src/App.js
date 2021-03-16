@@ -6,7 +6,7 @@ import Shop from './pages/shop/Shop';
 import './App.css';
 import Header from './components/header/Header';
 import SigninSignup from './pages/sign-in-sign-up/SigninSignup';
-import { auth } from './firebase/firebase.utils';
+import { auth, createUserProfileDocument } from './firebase/firebase.utils';
 
 class App extends React.Component {
   constructor() {
@@ -21,9 +21,23 @@ class App extends React.Component {
 
   componentDidMount() {
     //listening to authentication state changes
-    this.unsubscribeFromAuth = auth.onAuthStateChanged(user => {
-      this.setState({ currentUser: user })
-      console.log(user);
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
+      //checks if the user is already in database and returns snaphot of it, which than sets in state for currentUser
+      if (userAuth) {
+        const userRef = await createUserProfileDocument(userAuth);
+
+        userRef.onSnapshot(snapShot => {
+          this.setState({
+            currentUser: {
+              id: snapShot.id,
+              ...snapShot.data()
+            }
+          });
+        });
+      }
+      else {
+        this.setState({ currentUser: userAuth })
+      }
     })
   }
 
